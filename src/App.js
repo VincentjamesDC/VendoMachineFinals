@@ -1,102 +1,102 @@
 import React, { useState } from "react";
+import VendoMachineContract from "./contracts/VendoMachine.json";
 import Web3 from "web3";
-import VendingMachineContract from "./contracts/VendoMachine.json";
-
-const web3 = new Web3(Web3.givenProvider);
 
 function App() {
-  const [accounts, setAccounts] = useState([]);
-  const [contract, setContract] = useState(null);
-  const [itemPrice, setItemPrice] = useState(0);
-  const [stock, setStock] = useState(0);
+  const [account, setAccount] = useState("");
   const [balance, setBalance] = useState(0);
-  const [status, setStatus] = useState("");
+  const [price, setPrice] = useState(0);
+  const [stock, setStock] = useState(0);
+  const [amount, setAmount] = useState(0);
+  const [receipt, setReceipt] = useState("");
 
   const connectWallet = async () => {
-    try {
-      const accounts = await web3.eth.requestAccounts();
-      setAccounts(accounts);
-      const networkId = await web3.eth.net.getId();
-      const deployedNetwork = VendingMachineContract.networks[networkId];
-      const contract = new web3.eth.Contract(
-        VendingMachineContract.abi,
-        deployedNetwork && deployedNetwork.address
-      );
-      setContract(contract);
-      const itemPrice = await contract.methods.itemPrice().call();
-      const stock = await contract.methods.stock().call();
-      setItemPrice(itemPrice);
-      setStock(stock);
-      const balance = await web3.eth.getBalance(contract.options.address);
-      setBalance(balance);
-    } catch (error) {
-      console.error(error);
+    if (window.ethereum) {
+      try {
+        await window.ethereum.enable();
+        const web3 = new Web3(Web3.givenProvider);
+        const accounts = await web3.eth.getAccounts();
+        setAccount(accounts[0]);
+        const balance = await web3.eth.getBalance(accounts[0]);
+        setBalance(web3.utils.fromWei(balance, "ether"));
+        const networkId = await web3.eth.net.getId();
+        const contract = new web3.eth.Contract(
+          VendoMachineContract.abi,
+          VendoMachineContract.networks[networkId].address
+        );
+        const price = await contract.methods.getprice().call();
+        setPrice(web3.utils.fromWei(price, "ether"));
+
+        const stock = await contract.methods.getStock().call();
+        setStock(stock);
+      } catch (error) {
+        console.error(error);
+      }
+    } else {
+      alert("Please install MetaMask to connect to the Ethereum network");
     }
   };
 
-  const buyItem = async () => {
-    try {
-      await contract.methods.buyItem().send({
-        from: accounts[0],
-        value: itemPrice,
-      });
-      const newStock = await contract.methods.stock().call();
-      setStock(newStock);
-      setStatus("Item purchased.");
-    } catch (error) {
-      console.error(error);
-      setStatus("Purchase failed.");
-    }
-  };
-
-  const updateStock = async (event) => {
-    event.preventDefault();
-    try {
-      const newStock = parseInt(event.target.elements[0].value);
-      await contract.methods.updateStock(newStock).send({ from: accounts[0] });
-      setStock(newStock);
-      setStatus("Stock updated.");
-    } catch (error) {
-      console.error(error);
-      setStatus("Update failed.");
-    }
-  };
-
-  const withdrawFunds = async () => {
-    try {
-      await contract.methods.withdrawFunds().send({ from: accounts[0] });
-      const balance = await web3.eth.getBalance(contract.options.address);
-      setBalance(balance);
-      setStatus("Funds withdrawn.");
-    } catch (error) {
-      console.error(error);
-      setStatus("Withdrawal failed.");
+  const buy = async () => {
+    if (window.ethereum) {
+      try {
+        const web3 = new Web3(Web3.givenProvider);
+        const contract = new web3.eth.Contract(
+          VendoMachineContract.abi,
+          VendoMachineContract.networks[5777].address
+        );
+        await contract.methods.buy().send({
+          from: account,
+          value: web3.utils.toWei(amount),
+        });
+        setAmount(0);
+        setReceipt(await contract.methods.printReceipt().call({ from: account }));
+        const stock = await contract.methods.stock().call();
+        setStock(stock);
+        const balance = await web3.eth.getBalance(account);
+        setBalance(web3.utils.fromWei(balance, "ether"));
+        connectWallet();
+      } catch (error) {
+        console.error(error);
+      }
+    } else {
+      alert("Please install MetaMask to connect to the Ethereum network");
     }
   };
 
   return (
-    <div>
-      <h1>Vending Machine</h1>
-      {accounts.length === 0 ? (
-        <button onClick={connectWallet}>Connect Wallet</button>
-      ) : (
-        <div>
-          <p>Accounts: {accounts[0]}</p>
-          <p>Item Price: {itemPrice} wei</p>
-          <p>Stock: {stock}</p>
-          <p>Contract Balance: {balance} wei</p>
-          <button onClick={buyItem}>Buy Item</button>
-          <form onSubmit={updateStock}>
-            <label>
-              Stock:
-              <input type="number" name="stock" />
-            </label>
-            <button type="submit">Update Stock</button>
-          </form>
-          <button onClick={withdrawFunds}>Withdraw Funds</button>
-          <p>Status: {status}</p>
-        </div>
-      )}
+    
+    <div className="App">
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <header className="App-header">
+        <button onClick={connectWallet}>Connect to Wallet</button>
+        {account && (
+          <div>
+            <h3>Account: {account}</h3>
+            <p>Balance: {balance} ETH</p>
+          </div>
+        )}
+        <hr />
+        <h1>Vending Machine</h1>
+        <p>Price: {price} ETH</p>
+        <p>Stock: {stock}</p>
+        <label>Exact (ETH) Amount Please: </label>
+        <input
+          type="number"
+          min="0"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+    <p></p>
+        <button onClick={buy}>Buy</button>
+        {receipt && (
+          <div>
+            <h3>Receipt:</h3>
+            <p>{receipt}</p>
+          </div>
+        )}
+      </header>
+    </div>
     </div>
   );
 }

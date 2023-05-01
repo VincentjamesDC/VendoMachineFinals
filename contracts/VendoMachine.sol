@@ -38,6 +38,9 @@ contract VendoMachine {
     function getprice() public view  returns (uint256){
         return price;
     }
+    function getStock() public view returns (uint256) {
+        return stock;
+    }
 
     function printReceipt() public view returns (string memory) {
         require(balances[msg.sender] > 0, "No purchases made");
