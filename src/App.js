@@ -111,8 +111,6 @@ function App() {
           <div>
             <h3>Account: {account}</h3>
             <p>Balance: {balance} ETH</p>
-            <p>Total Earnings: {earnings} ETH</p>
-          <button onClick={withdraw}>Withdraw</button>
           </div>
         )}
         <hr />
@@ -134,6 +132,8 @@ function App() {
             <p>{receipt}</p>
           </div>
         )}
+        <p>Contract Earnings: {earnings} ETH</p>
+        <button onClick={withdraw}>Withdraw</button>
       </header>
     </div>
     </div>
