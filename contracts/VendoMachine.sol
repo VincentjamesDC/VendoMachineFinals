@@ -35,11 +35,20 @@ contract VendoMachine {
     function getBalance() public view returns (uint256) {
         return balances[msg.sender];
     }
+
     function getprice() public view  returns (uint256){
         return price;
     }
+
     function getStock() public view returns (uint256) {
         return stock;
+    }
+
+    function getTotalEarnings() public view returns (uint256) {
+        uint256 initialBalance = 50 * price;
+        uint256 balance = address(this).balance;
+        uint256 totalEarnings = initialBalance - balance;
+        return totalEarnings;
     }
 
     function printReceipt() public view returns (string memory) {

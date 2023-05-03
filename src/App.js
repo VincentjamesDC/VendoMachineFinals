@@ -9,6 +9,7 @@ function App() {
   const [stock, setStock] = useState(0);
   const [amount, setAmount] = useState(0);
   const [receipt, setReceipt] = useState("");
+  const [earnings, setEarnings] = useState(0);
 
   const connectWallet = async () => {
     if (window.ethereum) {
@@ -26,9 +27,17 @@ function App() {
         );
         const price = await contract.methods.getprice().call();
         setPrice(web3.utils.fromWei(price, "ether"));
-
+  
         const stock = await contract.methods.getStock().call();
         setStock(stock);
+  
+        const owner = await contract.methods.owner().call();
+        if (owner === account) {
+          const earnings = await contract.methods.getTotalEarnings().call();
+          setEarnings(web3.utils.fromWei(earnings, "ether"));
+        } else {
+          setEarnings(0);
+        }
       } catch (error) {
         console.error(error);
       }
@@ -55,7 +64,34 @@ function App() {
         setStock(stock);
         const balance = await web3.eth.getBalance(account);
         setBalance(web3.utils.fromWei(balance, "ether"));
-        connectWallet();
+  
+        const owner = await contract.methods.owner().call();
+        if (owner === account) {
+          const earnings = await contract.methods.getTotalEarnings().call();
+          setEarnings(web3.utils.fromWei(earnings, "ether"));
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    } else {
+      alert("Please install MetaMask to connect to the Ethereum network");
+    }
+  };
+
+  const withdraw = async () => {
+    if (window.ethereum) {
+      try {
+        const web3 = new Web3(Web3.givenProvider);
+        const contract = new web3.eth.Contract(
+          VendoMachineContract.abi,
+          VendoMachineContract.networks[5777].address
+        );
+        await contract.methods.withdraw().send({
+          from: account,
+        });
+        setReceipt("Withdrawal successful");
+        const earnings = await contract.methods.earnings().call();
+        setEarnings(web3.utils.fromWei(earnings, "ether"));
       } catch (error) {
         console.error(error);
       }
@@ -65,7 +101,6 @@ function App() {
   };
 
   return (
-    
     <div className="App">
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <header className="App-header">
@@ -74,6 +109,8 @@ function App() {
           <div>
             <h3>Account: {account}</h3>
             <p>Balance: {balance} ETH</p>
+            {/*<p>Total Earnings: {earnings} ETH</p>*/}
+          <button onClick={withdraw}>Withdraw</button>
           </div>
         )}
         <hr />
