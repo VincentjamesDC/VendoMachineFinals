@@ -19,6 +19,8 @@ function App() {
         const accounts = await web3.eth.getAccounts();
         setAccount(accounts[0]);
         const balance = await web3.eth.getBalance(accounts[0]);
+        const contractBal = await web3.eth.getBalance("0x4bF92a4eC5DD63AF997741E481a997e2dd113519");
+          setEarnings(web3.utils.fromWei(contractBal, "ether"));
         setBalance(web3.utils.fromWei(balance, "ether"));
         const networkId = await web3.eth.net.getId();
         const contract = new web3.eth.Contract(
@@ -109,7 +111,7 @@ function App() {
           <div>
             <h3>Account: {account}</h3>
             <p>Balance: {balance} ETH</p>
-            {/*<p>Total Earnings: {earnings} ETH</p>*/}
+            <p>Total Earnings: {earnings} ETH</p>
           <button onClick={withdraw}>Withdraw</button>
           </div>
         )}
